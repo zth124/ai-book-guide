@@ -39,10 +39,15 @@ const totalPrice = computed(() => {
 const checkout = async () => {
   if (cartItems.value.length === 0) return
   try {
-    const res = await fetch('/api/orders/create/1', { method: 'POST' })
+    const couponId = localStorage.getItem('pending_coupon_id')
+    const url = couponId
+      ? `/api/orders/create/1?coupon_id=${couponId}`
+      : '/api/orders/create/1'
+    const res = await fetch(url, { method: 'POST' })
     const data = await res.json()
     if (data.status === 'success') {
-      alert(`🎉 订单创建成功！订单号: ${data.order_id}，金额: ￥${data.total}`)
+      alert(`🎉 订单创建成功！订单号: ${data.order_id}，优惠后金额: ￥${data.total}`)
+      localStorage.removeItem('pending_coupon_id') // 用完后清除
       fetchCart() // 刷新购物车（清空）
     }
   } catch (error) {

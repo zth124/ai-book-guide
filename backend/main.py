@@ -59,9 +59,9 @@ def api_get_cart(user_id: int, db: Session = Depends(get_db)):
 
 # 接口：创建订单
 @app.post("/api/orders/create/{user_id}")
-def api_create_order(user_id: int, db: Session = Depends(get_db)):
+def api_create_order(user_id: int, coupon_id: int = None, db: Session = Depends(get_db)):
     try:
-        return service.create_order(db, user_id)
+        return service.create_order(db, user_id, coupon_id)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 

@@ -54,7 +54,7 @@ def get_cart(db: Session, user_id: int):
 
 
 # 纯函数：创建订单（简化版，先不扣库存和算优惠券）
-def create_order(db: Session, user_id: int):
+def create_order(db: Session, user_id: int, coupon_id: int = None):
     # 1. 获取购物车
     cart_items = db.query(CartItem).filter(CartItem.user_id == user_id).all()
     if not cart_items:
@@ -63,17 +63,28 @@ def create_order(db: Session, user_id: int):
     # 2. 计算总价
     total_amount = sum([item.book.list_price * item.qty for item in cart_items])
 
-    # 3. 创建订单主表
+    # 3. 应用优惠券
+    final_total = total_amount
+    if coupon_id:
+        coupon = db.query(Coupon).filter(Coupon.id == coupon_id).first()
+        if coupon and total_amount >= coupon.threshold:
+            if coupon.type == "满减":
+                final_total = total_amount - coupon.discount
+            elif coupon.type == "折扣":
+                final_total = total_amount * coupon.discount
+
+    # 4. 创建订单主表
     new_order = Order(
         user_id=user_id,
         original_total=total_amount,
-        total=total_amount,  # 暂不计算折扣
+        total=final_total,
+        coupon_id=coupon_id,
         status="待支付"
     )
     db.add(new_order)
     db.flush()  # 获取新生成的订单 ID
 
-    # 4. 创建订单明细并清空购物车
+    # 5. 创建订单明细并清空购物车
     for item in cart_items:
         order_item = OrderItem(
             order_id=new_order.id,
@@ -85,7 +96,7 @@ def create_order(db: Session, user_id: int):
         db.delete(item)  # 从购物车删掉
 
     db.commit()
-    return {"status": "success", "order_id": new_order.id, "total": float(total_amount)}
+    return {"status": "success", "order_id": new_order.id, "original_total": float(total_amount), "total": float(final_total)}
 # 1. 库存查询
 def check_stock(db: Session, book_id: int):
     inv = db.query(Inventory).filter(Inventory.book_id == book_id).first()

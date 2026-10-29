@@ -250,20 +250,17 @@ def clarify_node(state: AgentState) -> dict:
 
 AGENT_PROMPT = """你是图书商城导购智能体，负责根据用户需求调用工具收集购书所需信息。
 
-你可以调用以下工具：
-- search_books_tool: 检索图书(关键词/难度/分类/最高价)
-- check_stock_tool: 查库存
-- compare_price_tool: 比价
-- query_coupons_tool: 查优惠券
-- get_reviews_tool: 查评论
-- calc_budget_tool: 计算预算
+你只需聚焦三类信息的收集（价格比价、优惠券、预算计算由后台自动完成，请勿调用对应工具）：
+1. 图书检索：根据用户画像，按关键词/难度/分类/最高价搜索候选图书，可一次并行发多个检索条件。
+2. 库存查询：对看中的图书查库存。
+3. 评论查询：对看中的图书查评论（用于生成摘要）。
 
 工作方式：
-1. 根据用户需求与画像，调用 search_books_tool 检索相关图书(可同时用多个关键词/难度)。
-2. 必要时再查库存、优惠券、评论。
-3. 收集到足够信息后，用一句话说明"信息已收集完成"，然后停止(不要再调用工具)。
+- 优先用图书检索工具拿到候选书单，再对候选书查库存、查评论。
+- 尽量在一次回复里并行调用多个工具以提升效率。
+- 收集到足够信息后，用一句话说明"信息已收集完成"，然后停止(不要再调用工具)。
 
-注意：尽量在一次回复里并行调用多个工具以提升效率。不要编造图书信息，一切都以工具返回结果为准。
+注意：不要编造图书信息，一切都以工具返回结果为准。
 
 当前用户画像：
 {profile}
@@ -398,15 +395,21 @@ def planner_node(state: AgentState) -> dict:
         data = {}
 
     if not data.get("selected_ids"):
-        # 兜底：若 LLM 未给出选择，则在预算内按评分从高到低挑 2 本
+        # 兜底：若 LLM 未给出选择，则按评分从高到低贪心挑书，同时保证总价不超预算
         budget = float((state.get("profile") or {}).get("budget") or 0)
-        pool = [c for c in candidates]
-        if budget > 0:
-            under = [c for c in pool if c.get("price", 0) <= budget]
-            if under:
-                pool = under
-        pool = sorted(pool, key=lambda c: c.get("rating", 0), reverse=True)
-        selected = pool[:2]
+        pool = sorted(candidates, key=lambda c: c.get("rating", 0), reverse=True)
+        selected = []
+        total = 0.0
+        for c in pool:
+            if len(selected) >= 2:
+                break
+            if budget > 0 and total + c.get("price", 0) > budget:
+                continue
+            selected.append(c)
+            total += c.get("price", 0)
+        # 若一本都放不下预算，退回评分最高的一本
+        if not selected and pool:
+            selected = [pool[0]]
         data = {
             "reason": "综合评分与预算推荐",
             "path": ["入门", "进阶"],
@@ -457,9 +460,11 @@ def finalize_node(state: AgentState) -> dict:
         plan = state.get("plan") or {}
         candidates = {c["id"]: c for c in (state.get("candidates") or [])}
         selected_ids = plan.get("selected_ids", [])
+        profile = state.get("profile") or {}
+        budget = float(profile.get("budget") or 0)
 
+        # 1) 组装选中的图书
         books = []
-        original_total = 0.0
         for bid in selected_ids:
             c = candidates.get(bid)
             if not c:
@@ -477,9 +482,22 @@ def finalize_node(state: AgentState) -> dict:
                 "stock": c.get("stock", 0),
                 "review_summary": _review_summary(db, c["id"]),
             })
-            original_total += c["price"]
 
-        original_total = round(original_total, 2)
+        # 2) 预算校验：超预算时按评分从高到低贪心剔除，保证总价不超预算
+        if budget > 0 and books:
+            picked = []
+            total = 0.0
+            for bk in sorted(books, key=lambda x: x["rating"], reverse=True):
+                if total + bk["price"] > budget:
+                    continue
+                picked.append(bk)
+                total += bk["price"]
+            # 若一本都放不下，退回评分最高的一本(明确超预算也给用户一个选择)
+            if not picked:
+                picked = [max(books, key=lambda x: x["rating"])]
+            books = picked
+
+        original_total = round(sum(b["price"] for b in books), 2)
         coupon, final_price = _best_coupon(db, original_total)
 
         # 备选方案的书籍信息(若备选在候选/库中存在则补价格，否则仅保留 title)
@@ -503,6 +521,7 @@ def finalize_node(state: AgentState) -> dict:
             "total": final_price,
             "coupon": {
                 "applied": coupon is not None,
+                "id": coupon.id if coupon else None,
                 "name": coupon.name if coupon else None,
                 "saved": round(original_total - final_price, 2),
             },

@@ -91,6 +91,12 @@ const sendMessage = async () => {
 // 处理“确认购买” (真正的加购逻辑)
 const handleConfirm = async (plan) => {
   try {
+    // 暂存优惠券 ID，结算时一并提交
+    if (plan.coupon && plan.coupon.applied && plan.coupon.id != null) {
+      localStorage.setItem('pending_coupon_id', String(plan.coupon.id))
+    } else {
+      localStorage.removeItem('pending_coupon_id')
+    }
     for (const book of plan.books) {
       await fetch('/api/cart/add', {
         method: 'POST',
