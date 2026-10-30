@@ -1,119 +1,208 @@
 <template>
   <div class="plan-card">
+    <!-- 顶部 header -->
     <div class="plan-header">
-      <h3>📋 专属购书方案</h3>
+      <div class="header-left">
+        <div class="header-badge">✨</div>
+        <div>
+          <h3>专属购书方案</h3>
+          <span class="header-sub">根据你的画像智能推荐</span>
+        </div>
+      </div>
       <div class="price-box">
         <span v-if="plan.coupon && plan.coupon.applied" class="original">￥{{ plan.original_total }}</span>
-        <span class="budget">实付 ￥{{ plan.total }}</span>
+        <span class="final">￥{{ plan.total }}</span>
       </div>
     </div>
 
+    <!-- 优惠券提示 -->
     <div v-if="plan.coupon && plan.coupon.applied" class="coupon-tip">
-      🎟️ 已用券「{{ plan.coupon.name }}」，优惠 ￥{{ plan.coupon.saved }}
+      <span class="coupon-tag">🎟️ 已用券</span>
+      <span class="coupon-name">{{ plan.coupon.name }}</span>
+      <span class="coupon-save">省 ￥{{ plan.coupon.saved }}</span>
     </div>
 
+    <!-- 推荐理由 & 学习路线 -->
     <div class="plan-section">
       <h4>💡 推荐理由 & 学习路线</h4>
       <p class="reason">{{ plan.reason }}</p>
       <div class="path-tags">
-        <span v-for="(step, index) in plan.path" :key="index" class="tag">{{ step }}</span>
+        <template v-for="(step, index) in plan.path" :key="index">
+          <span class="step-tag">{{ step }}</span>
+          <span v-if="index < plan.path.length - 1" class="step-arrow">→</span>
+        </template>
       </div>
     </div>
 
+    <!-- 图书清单 -->
     <div class="plan-section">
-      <h4>📚 图书清单</h4>
+      <h4>📚 图书清单（{{ plan.books.length }} 本）</h4>
       <div class="book-list">
-        <div v-for="book in plan.books" :key="book.id" class="book-item">
+        <div v-for="(book, idx) in plan.books" :key="book.id" class="book-item">
+          <div class="book-num">{{ idx + 1 }}</div>
           <div class="book-main">
-            <span class="title">{{ book.title }}</span>
+            <div class="book-title-row">
+              <span class="title">{{ book.title }}</span>
+              <span class="price">￥{{ book.price }}</span>
+            </div>
             <div class="meta">
-              <span class="rating">⭐ {{ book.rating }}</span>
+              <span class="rating">★ {{ book.rating }}</span>
               <span class="level">{{ book.level }}</span>
-              <span :class="book.stock > 0 ? 'stock ok' : 'stock none'">{{ book.stock > 0 ? '有货' : '缺货' }}</span>
+              <span :class="book.stock > 0 ? 'stock ok' : 'stock none'">
+                {{ book.stock > 0 ? `有货(${book.stock})` : '缺货' }}
+              </span>
             </div>
             <p v-if="book.review_summary" class="review">{{ book.review_summary }}</p>
           </div>
-          <span class="price">￥{{ book.price }}</span>
         </div>
       </div>
     </div>
 
+    <!-- 备选方案 -->
     <div v-if="plan.alternatives && plan.alternatives.length" class="plan-section">
       <h4>🔁 备选方案</h4>
-      <div v-for="(alt, i) in plan.alternatives" :key="i" class="alt-item">
-        <span class="alt-title">{{ alt.title }}</span>
-        <span v-if="alt.price" class="alt-price">￥{{ alt.price }}</span>
-        <span class="alt-reason">{{ alt.reason }}</span>
+      <div class="alts-row">
+        <div v-for="(alt, i) in plan.alternatives" :key="i" class="alt-item">
+          <span class="alt-title">{{ alt.title }}</span>
+          <span class="alt-sub">
+            <span v-if="alt.price" class="alt-price">￥{{ alt.price }}</span>
+            <span class="alt-reason">{{ alt.reason }}</span>
+          </span>
+        </div>
       </div>
     </div>
 
+    <!-- 操作按钮 -->
     <div class="plan-actions">
-      <button class="confirm-btn" @click="emit('confirm')">✅ 确认并加入购物车</button>
       <button class="adjust-btn" @click="emit('adjust')">🔄 微调方案</button>
+      <button class="confirm-btn" @click="emit('confirm')">
+        <span>确认并加入购物车</span>
+        <span class="btn-arrow">→</span>
+      </button>
     </div>
   </div>
 </template>
 
 <script setup>
 defineProps({
-  plan: {
-    type: Object,
-    required: true
-  }
+  plan: { type: Object, required: true }
 })
-// 定义向父组件发送的事件
 const emit = defineEmits(['confirm', 'adjust'])
 </script>
 
 <style scoped>
 .plan-card {
-  background: #fff;
-  border: 1px solid #e0e0e0;
-  border-radius: 12px;
-  padding: 16px;
-  margin: 10px 0;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-  max-width: 500px;
+  background: white; border-radius: 18px; padding: 0;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  overflow: hidden; width: 100%; max-width: 520px;
+  animation: cardIn .4s ease both;
 }
+
+/* 顶部 header */
 .plan-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 10px;
-  margin-bottom: 15px;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 20px 22px;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: white;
 }
-.plan-header h3 { margin: 0; color: #35495e; }
-.price-box { display: flex; flex-direction: column; align-items: flex-end; }
-.budget { color: #e53935; font-weight: bold; font-size: 18px; }
-.original { color: #999; font-size: 13px; text-decoration: line-through; }
+.header-left { display: flex; gap: 12px; align-items: center; }
+.header-badge {
+  width: 40px; height: 40px; border-radius: 12px;
+  background: rgba(255,255,255,0.2); backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center; font-size: 18px;
+}
+.header-left h3 { margin: 0; font-size: 17px; font-weight: 700; }
+.header-sub { font-size: 12px; opacity: 0.85; }
+
+.price-box { text-align: right; }
+.original { display: block; font-size: 12px; opacity: 0.7; text-decoration: line-through; }
+.final { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; }
+
+/* 优惠券 */
 .coupon-tip {
-  background: #fff3e0; color: #e65100; border-radius: 6px;
-  padding: 8px 10px; margin-bottom: 12px; font-size: 13px;
+  display: flex; align-items: center; gap: 10px;
+  background: linear-gradient(90deg, #fef3c7, #fde68a);
+  border-left: 4px solid #f59e0b;
+  padding: 10px 18px; font-size: 13px;
 }
-.plan-section { margin-bottom: 15px; }
-.plan-section h4 { margin: 0 0 8px 0; color: #666; font-size: 14px; }
-.reason { font-size: 14px; line-height: 1.5; color: #333; margin: 0 0 10px 0; }
-.path-tags { display: flex; gap: 8px; flex-wrap: wrap; }
-.tag { background: #e8f5e9; color: #2e7d32; padding: 4px 10px; border-radius: 12px; font-size: 12px; }
-.book-list { background: #f9f9f9; border-radius: 8px; padding: 10px; }
-.book-item { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px dashed #ddd; }
+.coupon-tag { background: #f59e0b; color: white; padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+.coupon-name { font-weight: 600; color: #92400e; }
+.coupon-save { margin-left: auto; color: #b45309; font-weight: 700; }
+
+/* 各 section */
+.plan-section { padding: 18px 22px 0; }
+.plan-section h4 { margin: 0 0 10px; font-size: 13px; font-weight: 700; color: #6b7280; letter-spacing: 0.02em; }
+.reason { margin: 0 0 12px; font-size: 14px; line-height: 1.6; color: #1f2937; }
+
+.path-tags { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.step-tag {
+  background: linear-gradient(135deg, #eef2ff, #ede9fe);
+  color: #4f46e5; padding: 4px 12px; border-radius: 14px;
+  font-size: 12px; font-weight: 600;
+}
+.step-arrow { color: #c7d2fe; font-weight: 700; }
+
+/* 图书条目 */
+.book-list {
+  background: #f9fafb; border-radius: 14px; padding: 4px 14px;
+}
+.book-item {
+  display: flex; gap: 14px; padding: 14px 0;
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+}
 .book-item:last-child { border-bottom: none; }
-.book-main { flex: 1; }
-.title { font-weight: bold; font-size: 14px; }
-.meta { display: flex; gap: 8px; align-items: center; margin-top: 4px; font-size: 12px; color: #666; }
-.rating { color: #f57c00; }
-.stock.ok { color: #2e7d32; }
-.stock.none { color: #c62828; }
-.review { font-size: 12px; color: #888; margin: 6px 0 0; line-height: 1.4; }
-.price { color: #e53935; font-weight: bold; white-space: nowrap; }
-.alt-item { display: flex; gap: 8px; align-items: baseline; padding: 5px 0; font-size: 13px; }
-.alt-title { font-weight: bold; }
-.alt-price { color: #e53935; }
-.alt-reason { color: #888; font-size: 12px; }
-.plan-actions { display: flex; gap: 10px; margin-top: 20px; }
-button { flex: 1; padding: 10px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
-.confirm-btn { background: #42b883; color: white; }
-.adjust-btn { background: #f0f2f5; color: #333; }
-button:hover { opacity: 0.9; }
+.book-num {
+  width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+  background: #1f2937; color: white; font-size: 12px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+.book-main { flex: 1; min-width: 0; }
+.book-title-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.title { font-weight: 700; font-size: 14px; line-height: 1.35; }
+.price { color: #dc2626; font-weight: 700; font-size: 15px; flex-shrink: 0; }
+.meta { display: flex; gap: 10px; align-items: center; margin-top: 6px; font-size: 11px; color: #6b7280; }
+.rating { color: #d97706; font-weight: 600; }
+.level { background: #e0e7ff; color: #4338ca; padding: 1px 8px; border-radius: 10px; }
+.stock.ok { color: #059669; font-weight: 600; }
+.stock.none { color: #dc2626; font-weight: 600; }
+.review {
+  font-size: 12px; color: #6b7280; margin: 8px 0 0; line-height: 1.5;
+  background: white; padding: 8px 12px; border-radius: 8px;
+  border-left: 3px solid #e5e7eb;
+}
+
+/* 备选 */
+.alts-row { display: flex; flex-direction: column; gap: 8px; }
+.alt-item {
+  background: #f3f4f6; border-radius: 10px; padding: 10px 14px;
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+}
+.alt-title { font-weight: 600; font-size: 13px; color: #374151; }
+.alt-sub { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 12px; color: #6b7280; }
+.alt-price { color: #dc2626; font-weight: 600; }
+.alt-reason { color: #9ca3af; }
+
+/* 按钮 */
+.plan-actions {
+  display: flex; gap: 10px; padding: 18px 22px 22px;
+}
+.plan-actions button {
+  flex: 1; border: none; border-radius: 12px; cursor: pointer;
+  padding: 13px 18px; font-size: 14px; font-weight: 600;
+  transition: all .15s;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.confirm-btn {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white; box-shadow: 0 4px 12px rgba(99,102,241,0.3);
+}
+.confirm-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(99,102,241,0.4); }
+.btn-arrow { font-size: 16px; }
+.adjust-btn { background: #f3f4f6; color: #374151; }
+.adjust-btn:hover { background: #e5e7eb; }
+
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(12px) scale(.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
 </style>
