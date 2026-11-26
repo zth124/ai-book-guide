@@ -4,7 +4,7 @@ services:
     container_name: bookmall-mysql
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-bookmall_root_2026}
       MYSQL_DATABASE: bookmall
       MYSQL_USER: ${DB_USER}
       MYSQL_PASSWORD: ${DB_PASSWORD}
@@ -38,6 +38,9 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+    volumes:
+      # 头像等用户上传文件：挂到宿主机，容器重建后不丢
+      - ./backend/uploads:/app/uploads
     expose:
       - "8000"
 

@@ -1,0 +1,259 @@
+/* ============================================================
+   BookWise 设计系统 · 深墨绿 / 玻璃 / 珍珠光泽
+   全局变量、背景质感、通用组件与动效
+   ============================================================ */
+
+:root {
+  /* 底色：从深墨绿到近黑，靠顶部一层薄光提亮 */
+  --bg-0: #0a2023;
+  --bg-1: #0e2c30;
+  --bg-2: #144449;
+
+  --surface: rgba(255, 255, 255, 0.05);
+  --surface-2: rgba(255, 255, 255, 0.09);
+  --surface-3: rgba(255, 255, 255, 0.14);
+
+  /* 描边偏冷白，带一点点青，像玻璃边缘 */
+  --stroke: rgba(206, 236, 233, 0.14);
+  --stroke-2: rgba(214, 242, 239, 0.26);
+
+  --text: #e9f3f2;
+  --text-dim: #a6c0c0;
+  --text-faint: #6f8b8c;
+
+  --brand: #2f8f88;        /* 深青，用于底色块 */
+  --brand-2: #a7e8de;      /* 淡薄荷，用于高光与强调 */
+  --accent: #dfb6ae;       /* 玫瑰金，克制使用 */
+  --ok: #5fd6b4;
+  --warn: #e6c37a;
+  --danger: #e58f86;
+
+  /* 珍珠按钮：浅到深的一层薄釉，配深色字 */
+  --cta-bg: linear-gradient(135deg, #f5fcfa 0%, #d7efe9 45%, #a9ded6 100%);
+  --cta-fg: #07282b;
+  --mark-bg: linear-gradient(150deg, #e4f8f4 0%, #9cded4 52%, #2f8f88 100%);
+  --bubble-bg: linear-gradient(135deg, #2f8f88 0%, #1d6b69 55%, #164f52 100%);
+
+  --radius: 22px;
+  --radius-sm: 13px;
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --shadow: 0 30px 70px -34px rgba(2, 12, 14, 0.9);
+  --glow: 0 22px 50px -24px rgba(47, 143, 136, 0.55);
+  --rim: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+}
+
+* { box-sizing: border-box; }
+
+html, body, #app { min-height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg-0);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+    'HarmonyOS Sans SC', 'Microsoft YaHei', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+/* 底色：顶部一层冷光，越往下越沉，像屏幕反光 */
+body::before {
+  content: '';
+  position: fixed;
+  inset: -20%;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    radial-gradient(56% 46% at 50% -8%, rgba(138, 214, 205, 0.36), transparent 68%),
+    radial-gradient(42% 40% at 10% 16%, rgba(47, 143, 136, 0.34), transparent 66%),
+    radial-gradient(38% 36% at 90% 8%, rgba(223, 182, 174, 0.15), transparent 64%),
+    radial-gradient(70% 52% at 50% 44%, rgba(29, 100, 101, 0.42), transparent 74%),
+    radial-gradient(60% 46% at 50% 108%, rgba(6, 30, 33, 0.9), transparent 70%);
+  filter: blur(48px) saturate(120%);
+  animation: auroraShift 26s ease-in-out infinite alternate;
+}
+
+/* 极细噪点：给纯色面一点胶片颗粒，避免塑料感 */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+}
+
+@keyframes auroraShift {
+  0%   { transform: translate3d(0, 0, 0) scale(1); }
+  50%  { transform: translate3d(1.5%, -2%, 0) scale(1.05); }
+  100% { transform: translate3d(-1.5%, 1.5%, 0) scale(1.02); }
+}
+
+::selection { background: rgba(167, 232, 222, 0.3); color: #fff; }
+
+/* 窄屏上把光晕压低，避免整块泛白、字看不清 */
+@media (max-width: 768px) {
+  body::before { opacity: 0.6; }
+}
+
+::-webkit-scrollbar { width: 9px; height: 9px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(206, 236, 233, 0.16);
+  border-radius: 9px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(206, 236, 233, 0.3); background-clip: padding-box; }
+
+/* ---------- 通用元件 ---------- */
+
+.glass {
+  position: relative;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.082), rgba(255, 255, 255, 0.028) 52%, rgba(255, 255, 255, 0.014)),
+    radial-gradient(120% 76% at 50% 0%, rgba(167, 232, 222, 0.1), transparent 62%);
+  border: 1px solid rgba(214, 242, 239, 0.2);
+  border-radius: var(--radius);
+  backdrop-filter: blur(26px) saturate(115%);
+  -webkit-backdrop-filter: blur(26px) saturate(115%);
+  box-shadow:
+    var(--shadow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 44px 70px -54px rgba(255, 255, 255, 0.24);
+}
+
+/* 玻璃边缘的一道高光：左上亮、右下带一点薄荷反光 */
+.glass::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  pointer-events: none;
+  background: linear-gradient(
+    158deg,
+    rgba(255, 255, 255, 0.5) 0%,
+    rgba(255, 255, 255, 0.08) 26%,
+    rgba(255, 255, 255, 0.03) 68%,
+    rgba(167, 232, 222, 0.34) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 12px 22px;
+  border-radius: 14px;
+  color: var(--text);
+  background: var(--surface);
+  transition: transform 0.25s var(--ease), box-shadow 0.25s var(--ease),
+    background 0.25s var(--ease), border-color 0.25s var(--ease);
+}
+.btn:active { transform: translateY(1px) scale(0.99); }
+
+/* 主按钮：珍珠釉面 + 深色字，比霓虹渐变贵气，也更像参考图 */
+.btn-primary {
+  position: relative;
+  color: var(--cta-fg);
+  background: var(--cta-bg);
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  box-shadow: 0 16px 34px -18px rgba(2, 20, 22, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 22px 44px -18px rgba(2, 20, 22, 1), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.btn-ghost {
+  background: var(--surface);
+  border: 1px solid var(--stroke);
+  color: var(--text);
+}
+.btn-ghost:hover {
+  background: var(--surface-2);
+  border-color: var(--stroke-2);
+  transform: translateY(-2px);
+}
+
+/* 渐变字：白 → 薄荷 → 玫瑰金，只在关键标题用 */
+.grad-text {
+  background: linear-gradient(100deg, #ffffff 0%, #e6f4f1 34%, #b9ece2 72%, #86d5c9 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-dim);
+  background: var(--surface);
+  border: 1px solid var(--stroke);
+}
+
+/* ---------- 动效 ---------- */
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(18px) scale(0.985); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@keyframes pulseDot {
+  0%, 100% { opacity: 0.35; transform: scale(0.8); }
+  50%      { opacity: 1; transform: scale(1); }
+}
+
+@keyframes floaty {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-10px); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  border-radius: 16px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.035) 25%,
+    rgba(167, 232, 222, 0.1) 37%,
+    rgba(255, 255, 255, 0.035) 63%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+}

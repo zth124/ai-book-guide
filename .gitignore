@@ -13,3 +13,5 @@ dist/
 # IDE
 .vscode/
 .idea/
+# 用户头像文件不纳入版本管理
+backend/uploads/

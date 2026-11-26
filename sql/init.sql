@@ -33,7 +33,7 @@ CREATE TABLE inventory (
   book_id  INT NOT NULL UNIQUE,
   stock    INT NOT NULL DEFAULT 0,
   FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE reviews (
   id          INT AUTO_INCREMENT PRIMARY KEY,
@@ -57,9 +57,11 @@ CREATE TABLE coupons (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE users (
-  id         INT AUTO_INCREMENT PRIMARY KEY,
-  name       VARCHAR(50) NOT NULL,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  id            INT AUTO_INCREMENT PRIMARY KEY,
+  name          VARCHAR(50) NOT NULL,
+  password_hash VARCHAR(255) NULL,
+  avatar        VARCHAR(200) NULL,
+  created_at    DATETIME DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE cart_items (

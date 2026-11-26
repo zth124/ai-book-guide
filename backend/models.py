@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Numeric, Text, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, String, Numeric, Text, ForeignKey, DateTime, Date
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from database import Base
@@ -91,8 +91,9 @@ class Coupon(Base):
     type = Column(String(20))
     threshold = Column(Numeric(10, 2))
     discount = Column(Numeric(10, 2))
+    expire = Column(Date, nullable=False)
 
-    # 物流表
+# 物流表
 class Logistics(Base):
     __tablename__ = "logistics"
     id = Column(Integer, primary_key=True, index=True)
@@ -100,5 +101,17 @@ class Logistics(Base):
     node = Column(String(50))
     description = Column(String(200))
     time = Column(DateTime, server_default=func.now())
+
+
+# 用户表（init.sql 里本来就有，之前漏了映射；加购/下单的外键都指向它）
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(50), nullable=False)
+    # 密码用 pbkdf2 存 "盐$哈希"，不落明文；老数据为空表示尚未绑定密码
+    password_hash = Column(String(255), nullable=True)
+    # 头像文件名（图片本体存在 backend/uploads/avatars 下，不塞进数据库）
+    avatar = Column(String(200), nullable=True)
+    created_at = Column(DateTime, server_default=func.now())
 
 

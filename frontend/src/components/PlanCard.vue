@@ -1,55 +1,50 @@
 <template>
-  <div class="plan-card">
-    <!-- 顶部 header -->
-    <div class="plan-header">
-      <div class="header-left">
-        <div class="header-badge">✨</div>
-        <div>
-          <h3>专属购书方案</h3>
-          <span class="header-sub">根据你的画像智能推荐</span>
-        </div>
+  <div class="plan">
+    <div class="plan-head">
+      <div class="badge"><Icon name="sparkles" :size="16" /></div>
+      <div class="head-meta">
+        <strong>专属购书方案</strong>
+        <span>按你的需求整理</span>
       </div>
       <div class="price-box">
-        <span v-if="plan.coupon && plan.coupon.applied" class="original">￥{{ plan.original_total }}</span>
+        <span v-if="plan.coupon && plan.coupon.applied" class="orig">￥{{ plan.original_total }}</span>
         <span class="final">￥{{ plan.total }}</span>
       </div>
     </div>
 
-    <!-- 优惠券提示 -->
-    <div v-if="plan.coupon && plan.coupon.applied" class="coupon-tip">
-      <span class="coupon-tag">🎟️ 已用券</span>
-      <span class="coupon-name">{{ plan.coupon.name }}</span>
-      <span class="coupon-save">省 ￥{{ plan.coupon.saved }}</span>
+    <div v-if="plan.coupon && plan.coupon.applied" class="coupon">
+      <Icon name="tag" :size="14" />
+      <span>{{ plan.coupon.name }}</span>
+      <em>省 ￥{{ plan.coupon.saved }}</em>
     </div>
 
-    <!-- 推荐理由 & 学习路线 -->
-    <div class="plan-section">
-      <h4>💡 推荐理由 & 学习路线</h4>
+    <div class="section">
+      <h4>推荐理由</h4>
       <p class="reason">{{ plan.reason }}</p>
-      <div class="path-tags">
-        <template v-for="(step, index) in plan.path" :key="index">
-          <span class="step-tag">{{ step }}</span>
-          <span v-if="index < plan.path.length - 1" class="step-arrow">→</span>
+      <div v-if="plan.path && plan.path.length" class="path">
+        <template v-for="(p, i) in plan.path" :key="i">
+          <span class="path-step">{{ p }}</span>
+          <span v-if="i < plan.path.length - 1" class="path-arrow">→</span>
         </template>
       </div>
     </div>
 
-    <!-- 图书清单 -->
-    <div class="plan-section">
-      <h4>📚 图书清单（{{ plan.books.length }} 本）</h4>
-      <div class="book-list">
-        <div v-for="(book, idx) in plan.books" :key="book.id" class="book-item">
-          <div class="book-num">{{ idx + 1 }}</div>
-          <div class="book-main">
-            <div class="book-title-row">
-              <span class="title">{{ book.title }}</span>
-              <span class="price">￥{{ book.price }}</span>
+    <div class="section">
+      <h4>图书清单 <em>{{ plan.books.length }}</em></h4>
+      <div class="books">
+        <div v-for="(book, idx) in plan.books" :key="book.id" class="row">
+          <span class="idx">{{ String(idx + 1).padStart(2, '0') }}</span>
+          <div class="row-main">
+            <div class="row-top">
+              <span class="t">{{ book.title }}</span>
+              <span class="p">￥{{ book.price }}</span>
             </div>
             <div class="meta">
-              <span class="rating">★ {{ book.rating }}</span>
-              <span class="level">{{ book.level }}</span>
-              <span :class="book.stock > 0 ? 'stock ok' : 'stock none'">
-                {{ book.stock > 0 ? `有货(${book.stock})` : '缺货' }}
+              <span class="m"><Icon name="star" :size="11" />{{ book.rating }}</span>
+              <span class="m">{{ book.level }}</span>
+              <span :class="['m', 'stock', book.stock > 0 ? 'ok' : 'none']">
+                <Icon :name="book.stock > 0 ? 'check' : 'close'" :size="11" />
+                {{ book.stock > 0 ? `有货 ${book.stock}` : '缺货' }}
               </span>
             </div>
             <p v-if="book.review_summary" class="review">{{ book.review_summary }}</p>
@@ -58,32 +53,33 @@
       </div>
     </div>
 
-    <!-- 备选方案 -->
-    <div v-if="plan.alternatives && plan.alternatives.length" class="plan-section">
-      <h4>🔁 备选方案</h4>
-      <div class="alts-row">
-        <div v-for="(alt, i) in plan.alternatives" :key="i" class="alt-item">
-          <span class="alt-title">{{ alt.title }}</span>
-          <span class="alt-sub">
-            <span v-if="alt.price" class="alt-price">￥{{ alt.price }}</span>
-            <span class="alt-reason">{{ alt.reason }}</span>
+    <div v-if="plan.alternatives && plan.alternatives.length" class="section">
+      <h4>备选方案</h4>
+      <div class="alts">
+        <div v-for="(a, i) in plan.alternatives" :key="i" class="alt">
+          <span class="alt-title">{{ a.title }}</span>
+          <span class="alt-meta">
+            <span v-if="a.price" class="alt-price">￥{{ a.price }}</span>
+            {{ a.reason }}
           </span>
         </div>
       </div>
     </div>
 
-    <!-- 操作按钮 -->
     <div class="plan-actions">
-      <button class="adjust-btn" @click="emit('adjust')">🔄 微调方案</button>
-      <button class="confirm-btn" @click="emit('confirm')">
-        <span>确认并加入购物车</span>
-        <span class="btn-arrow">→</span>
+      <button class="ghost" @click="emit('adjust')">
+        <Icon name="refresh" :size="14" /> 微调方案
+      </button>
+      <button class="primary" @click="emit('confirm')">
+        确认并加购 <Icon name="arrow" :size="15" />
       </button>
     </div>
   </div>
 </template>
 
 <script setup>
+import Icon from './Icon.vue'
+
 defineProps({
   plan: { type: Object, required: true }
 })
@@ -91,118 +87,144 @@ const emit = defineEmits(['confirm', 'adjust'])
 </script>
 
 <style scoped>
-.plan-card {
-  background: white; border-radius: 18px; padding: 0;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
-  overflow: hidden; width: 100%; max-width: 520px;
-  animation: cardIn .4s ease both;
+.plan {
+  width: min(560px, 100%);
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid rgba(214, 242, 239, 0.24);
+  background:
+    linear-gradient(180deg, rgba(167, 232, 222, 0.1), rgba(255, 255, 255, 0.02) 36%),
+    rgba(9, 26, 30, 0.74);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 30px 70px -40px rgba(2, 20, 22, 0.95), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  animation: cardIn 0.5s var(--ease) both;
 }
 
-/* 顶部 header */
-.plan-header {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 20px 22px;
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-  color: white;
+.plan-head {
+  display: flex; align-items: center; gap: 12px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--stroke);
 }
-.header-left { display: flex; gap: 12px; align-items: center; }
-.header-badge {
-  width: 40px; height: 40px; border-radius: 12px;
-  background: rgba(255,255,255,0.2); backdrop-filter: blur(8px);
-  display: flex; align-items: center; justify-content: center; font-size: 18px;
-}
-.header-left h3 { margin: 0; font-size: 17px; font-weight: 700; }
-.header-sub { font-size: 12px; opacity: 0.85; }
-
-.price-box { text-align: right; }
-.original { display: block; font-size: 12px; opacity: 0.7; text-decoration: line-through; }
-.final { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; }
-
-/* 优惠券 */
-.coupon-tip {
-  display: flex; align-items: center; gap: 10px;
-  background: linear-gradient(90deg, #fef3c7, #fde68a);
-  border-left: 4px solid #f59e0b;
-  padding: 10px 18px; font-size: 13px;
-}
-.coupon-tag { background: #f59e0b; color: white; padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
-.coupon-name { font-weight: 600; color: #92400e; }
-.coupon-save { margin-left: auto; color: #b45309; font-weight: 700; }
-
-/* 各 section */
-.plan-section { padding: 18px 22px 0; }
-.plan-section h4 { margin: 0 0 10px; font-size: 13px; font-weight: 700; color: #6b7280; letter-spacing: 0.02em; }
-.reason { margin: 0 0 12px; font-size: 14px; line-height: 1.6; color: #1f2937; }
-
-.path-tags { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-.step-tag {
-  background: linear-gradient(135deg, #eef2ff, #ede9fe);
-  color: #4f46e5; padding: 4px 12px; border-radius: 14px;
-  font-size: 12px; font-weight: 600;
-}
-.step-arrow { color: #c7d2fe; font-weight: 700; }
-
-/* 图书条目 */
-.book-list {
-  background: #f9fafb; border-radius: 14px; padding: 4px 14px;
-}
-.book-item {
-  display: flex; gap: 14px; padding: 14px 0;
-  border-bottom: 1px solid rgba(0,0,0,0.04);
-}
-.book-item:last-child { border-bottom: none; }
-.book-num {
-  width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
-  background: #1f2937; color: white; font-size: 12px; font-weight: 700;
+.badge {
+  width: 38px; height: 38px; border-radius: 12px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
+  background: var(--mark-bg);
+  color: #06282b;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 12px 26px -16px rgba(2, 20, 22, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
-.book-main { flex: 1; min-width: 0; }
-.book-title-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-.title { font-weight: 700; font-size: 14px; line-height: 1.35; }
-.price { color: #dc2626; font-weight: 700; font-size: 15px; flex-shrink: 0; }
-.meta { display: flex; gap: 10px; align-items: center; margin-top: 6px; font-size: 11px; color: #6b7280; }
-.rating { color: #d97706; font-weight: 600; }
-.level { background: #e0e7ff; color: #4338ca; padding: 1px 8px; border-radius: 10px; }
-.stock.ok { color: #059669; font-weight: 600; }
-.stock.none { color: #dc2626; font-weight: 600; }
+.head-meta { display: flex; flex-direction: column; gap: 3px; }
+.head-meta strong { font-size: 15px; letter-spacing: -0.01em; }
+.head-meta span { font-size: 11.5px; color: var(--text-faint); }
+.price-box { margin-left: auto; text-align: right; }
+.orig { display: block; font-size: 11.5px; color: var(--text-faint); text-decoration: line-through; }
+.final {
+  font-size: 24px; font-weight: 800; letter-spacing: -0.02em;
+  background: linear-gradient(120deg, #fff, #b8e9e0 60%, #a7e8de);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.coupon {
+  display: flex; align-items: center; gap: 7px;
+  margin: 14px 20px 0; padding: 9px 13px;
+  border-radius: 11px;
+  font-size: 12px; color: #f0d5ce;
+  background: linear-gradient(90deg, rgba(223, 182, 174, 0.14), rgba(223, 182, 174, 0.03));
+  border: 1px solid rgba(223, 182, 174, 0.26);
+}
+.coupon em { margin-left: auto; font-style: normal; color: #f6e3dd; font-weight: 700; }
+
+.section { padding: 16px 20px 0; }
+.section h4 {
+  margin: 0 0 9px;
+  display: flex; align-items: center; gap: 7px;
+  font-size: 12px; font-weight: 600;
+  color: var(--text-faint); letter-spacing: 0.08em; text-transform: uppercase;
+}
+.section h4 em {
+  font-style: normal; padding: 1px 7px; border-radius: 6px;
+  font-size: 10.5px; color: #b8e9e0;
+  background: rgba(47, 143, 136, 0.16);
+}
+.reason { margin: 0; font-size: 13.2px; line-height: 1.75; color: var(--text-dim); }
+
+.path { display: flex; align-items: center; gap: 7px; margin-top: 13px; flex-wrap: wrap; }
+.path-step {
+  padding: 5px 12px; border-radius: 999px;
+  font-size: 11.5px; font-weight: 600; color: #b8e9e0;
+  background: rgba(47, 143, 136, 0.12);
+  border: 1px solid rgba(47, 143, 136, 0.26);
+}
+.path-arrow { color: var(--text-faint); font-size: 11px; }
+
+.books { display: flex; flex-direction: column; gap: 8px; }
+.row {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 12px 13px;
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid var(--stroke);
+  transition: border-color 0.2s, background 0.2s, transform 0.2s var(--ease);
+}
+.row:hover {
+  border-color: rgba(47, 143, 136, 0.35);
+  background: rgba(47, 143, 136, 0.07);
+  transform: translateX(3px);
+}
+.idx {
+  font-size: 11px; font-weight: 700; color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+  padding-top: 2px;
+}
+.row-main { flex: 1; min-width: 0; }
+.row-top { display: flex; align-items: baseline; gap: 10px; }
+.t {
+  flex: 1; font-size: 13.5px; font-weight: 600; line-height: 1.45;
+}
+.p { font-size: 13.5px; font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; }
+.meta { display: flex; align-items: center; gap: 10px; margin-top: 6px; flex-wrap: wrap; }
+.m { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; color: var(--text-faint); }
+.stock.ok { color: var(--ok); }
+.stock.none { color: var(--danger); }
 .review {
-  font-size: 12px; color: #6b7280; margin: 8px 0 0; line-height: 1.5;
-  background: white; padding: 8px 12px; border-radius: 8px;
-  border-left: 3px solid #e5e7eb;
+  margin: 8px 0 0; font-size: 11.5px; line-height: 1.6; color: var(--text-faint);
+  padding-left: 8px; border-left: 2px solid rgba(47, 143, 136, 0.3);
 }
 
-/* 备选 */
-.alts-row { display: flex; flex-direction: column; gap: 8px; }
-.alt-item {
-  background: #f3f4f6; border-radius: 10px; padding: 10px 14px;
-  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+.alts { display: flex; flex-direction: column; gap: 8px; }
+.alt {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 11px 13px; border-radius: 12px;
+  border: 1px dashed var(--stroke-2);
+  background: rgba(255, 255, 255, 0.02);
 }
-.alt-title { font-weight: 600; font-size: 13px; color: #374151; }
-.alt-sub { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 12px; color: #6b7280; }
-.alt-price { color: #dc2626; font-weight: 600; }
-.alt-reason { color: #9ca3af; }
+.alt-title { font-size: 13px; font-weight: 600; color: var(--text); }
+.alt-meta { font-size: 11.5px; color: var(--text-faint); line-height: 1.55; }
+.alt-price { color: #b8e9e0; font-weight: 600; margin-right: 8px; }
 
-/* 按钮 */
 .plan-actions {
-  display: flex; gap: 10px; padding: 18px 22px 22px;
+  display: flex; gap: 10px;
+  padding: 18px 20px 20px;
 }
-.plan-actions button {
-  flex: 1; border: none; border-radius: 12px; cursor: pointer;
-  padding: 13px 18px; font-size: 14px; font-weight: 600;
-  transition: all .15s;
-  display: flex; align-items: center; justify-content: center; gap: 6px;
+.ghost {
+  flex: 0 0 auto;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 12px 18px; border-radius: 13px; cursor: pointer;
+  font-size: 13px; font-family: inherit; font-weight: 500;
+  color: var(--text-dim);
+  background: var(--surface); border: 1px solid var(--stroke);
+  transition: all 0.22s var(--ease);
 }
-.confirm-btn {
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  color: white; box-shadow: 0 4px 12px rgba(99,102,241,0.3);
+.ghost:hover { color: var(--text); border-color: var(--stroke-2); background: var(--surface-2); }
+.primary {
+  flex: 1;
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  padding: 12px 18px; border-radius: 13px; border: 1px solid rgba(255, 255, 255, 0.4); cursor: pointer;
+  font-size: 13.5px; font-family: inherit; font-weight: 700; color: var(--cta-fg);
+  background: var(--cta-bg);
+  box-shadow: 0 16px 34px -20px rgba(2, 20, 22, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  transition: transform 0.2s var(--ease), box-shadow 0.2s;
 }
-.confirm-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(99,102,241,0.4); }
-.btn-arrow { font-size: 16px; }
-.adjust-btn { background: #f3f4f6; color: #374151; }
-.adjust-btn:hover { background: #e5e7eb; }
-
-@keyframes cardIn {
-  from { opacity: 0; transform: translateY(12px) scale(.98); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
+.primary:hover { transform: translateY(-2px); box-shadow: 0 22px 42px -20px rgba(2, 20, 22, 1), inset 0 1px 0 rgba(255, 255, 255, 0.8); }
 </style>
